@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -73,6 +74,61 @@ public function logout(Request $request)
         'message' => 'Logout Berhasil'
     ]);
 }
+
+public function profile(Request $request)
+{
+    return response()->json($request->user());
+}
+
+public function updatePassword(Request $request)
+{
+    $request->validate([
+        'current_password' => 'required',
+        'new_password' => 'required|string|min:6|confirmed',
+    ], [
+        'new_password.confirmed' => 'Konfirmasi password baru tidak sesuai.',
+    ]);
+
+    $user = $request->user();
+
+    // Cek password lama
+    if (! Hash::check($request->current_password, $user->password)) {
+        return response()->json(['message' => 'Password lama salah'], 403);
+    }
+
+    // Cek password baru sama dengan lama
+    if (Hash::check($request->new_password, $user->password)) {
+        return response()->json(['message' => 'Password baru tidak boleh sama dengan password lama'], 422);
+    }
+
+    
+    $user->password = Hash::make($request->new_password);
+    $user->save();
+
+    return response()->json(['message' => 'Password berhasil diubah']);
+}
+
+
+public function deleteProfile(Request $request)
+{
+    $user = $request->user();
+    $user->delete();
+    $user->tokens()->delete();
+    return response()->json(['message' => 'Profilmu hilang']);
+}
+
+public function allUsers()
+{
+    $user = Auth::user();
+
+    if ($user->role !== 'admin') {
+        return response()->json(['message' => 'Unauthorized'], 403);
+    }
+
+    $users = User::all();
+    return response()->json($users);
+}
+
 
 }
 

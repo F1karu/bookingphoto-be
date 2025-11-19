@@ -32,8 +32,9 @@ class PhotographerController extends Controller
         'email' => 'required|email|unique:photographers,email',
         'bio' => 'required|string',
         'photo_url' => 'required|string',
-        'location' => 'required|string',
+        'city_id' => 'required|exists:cities,id',
         'price_per_hour' => 'required|numeric',
+        'category' => 'required|in:wedding,portrait,event,newborn,product,family',
     ]);
 
     $photographer = Photographer::create([
@@ -42,9 +43,11 @@ class PhotographerController extends Controller
         'email' => $request->email,
         'bio' => $request->bio,
         'photo_url' => $request->photo_url,
-        'location' => $request->location,
         'price_per_hour' => $request->price_per_hour,
         'status' => 'available', 
+        'city_id' => $request->city_id,
+        'category' => $request->category,
+  
     ]);
 
     return response()->json($photographer, 201);
@@ -61,9 +64,12 @@ class PhotographerController extends Controller
             'email' => 'sometimes|email|unique:photographers,email,' . $id,
             'bio' => 'nullable|string',
             'photo_url' => 'nullable|string',
-            'location' => 'nullable|string',
             'price_per_hour' => 'nullable|numeric',
             'status' => 'nullable|in:available,busy,offline',
+            'city_id' => 'sometimes|exists:cities,id',
+            'category' => 'sometimes|in:wedding,portrait,event,newborn,product,family',
+
+
     ]);
 
     $photographer->update($request->all());
@@ -92,5 +98,7 @@ public function updateStatus(Request $request, $id)
 
     return response()->json($photographer);
 }
+
+
 
 }

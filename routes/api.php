@@ -17,6 +17,17 @@ Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth:sanctum');
 
 
+//ROUTE USER
+Route::middleware('auth:sanctum')->group(function () {
+Route::get('/profile', [AuthController::class, 'profile']);
+Route::patch('/profile/password', [AuthController::class, 'updatePassword']);
+Route::delete('/profile', [AuthController::class, 'deleteProfile']);
+
+Route::get('/users', [AuthController::class, 'allUsers'])
+        ->middleware('admin');
+});
+
+
 
 
 
@@ -24,6 +35,9 @@ Route::post('/logout', [AuthController::class, 'logout'])
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('photographers', [PhotographerController::class, 'index']);
     Route::get('photographers/{id}', [PhotographerController::class, 'show']);
+    Route::get('/cities', [CityController::class, 'index']);
+
+    
 
     Route::middleware('admin')->group(function () {
         Route::post('photographers', [PhotographerController::class, 'store']);

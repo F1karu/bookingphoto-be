@@ -31,27 +31,30 @@ class PhotographerController extends Controller
         'phone' => 'required|string|max:20',
         'email' => 'required|email|unique:photographers,email',
         'bio' => 'required|string',
-        'photo_url' => 'required|string',
         'city_id' => 'required|exists:cities,id',
         'price_per_hour' => 'required|numeric',
         'category' => 'required|in:wedding,portrait,event,newborn,product,family',
+        'photo_url' => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
     ]);
+
+    // Simpan file
+    $path = $request->file('photo_url')->store('photographers', 'public');
 
     $photographer = Photographer::create([
         'name' => $request->name,
         'phone' => $request->phone,
         'email' => $request->email,
         'bio' => $request->bio,
-        'photo_url' => $request->photo_url,
-        'price_per_hour' => $request->price_per_hour,
-        'status' => 'available', 
         'city_id' => $request->city_id,
+        'price_per_hour' => $request->price_per_hour,
+        'status' => 'available',
         'category' => $request->category,
-  
+        'photo_url' => '/storage/' . $path,
     ]);
 
     return response()->json($photographer, 201);
 }
+
 
 
    public function update(Request $request, $id)
@@ -63,14 +66,20 @@ class PhotographerController extends Controller
         'phone' => 'sometimes|string|max:20',
             'email' => 'sometimes|email|unique:photographers,email,' . $id,
             'bio' => 'nullable|string',
-            'photo_url' => 'nullable|string',
+            'photo_url' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'price_per_hour' => 'nullable|numeric',
             'status' => 'nullable|in:available,busy,offline',
             'city_id' => 'sometimes|exists:cities,id',
             'category' => 'sometimes|in:wedding,portrait,event,newborn,product,family',
 
-
+        
     ]);
+
+    if ($request->hasFile('photo_url')) {
+    $path = $request->file('photo_url')->store('photographers', 'public');
+    $request->merge(['photo_url' => '/storage/' . $path]);
+}
+
 
     $photographer->update($request->all());
 
@@ -98,6 +107,19 @@ public function updateStatus(Request $request, $id)
 
     return response()->json($photographer);
 }
+
+public function getByStatus($status)
+{
+    if (!in_array($status, ['available','busy','offline'])) {
+        return response()->json(['message' => 'Status tidak valid'], 422);
+    }
+
+    $photographers = Photographer::where('status', $status)->get();
+    return response()->json($photographers);
+}
+
+
+
 
 
 

@@ -108,6 +108,49 @@ public function updatePassword(Request $request)
     return response()->json(['message' => 'Password berhasil diubah']);
 }
 
+public function updateProfile(Request $request)
+{
+    $user = $request->user();
+
+    $request->validate([
+        'name' => 'sometimes|string|max:255',
+        'email' => 'sometimes|email|unique:users,email,' . $user->id,
+        'password' => 'nullable|string|min:6|confirmed',
+        'profile_photo' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+    ]);
+
+    // Update data dasar
+    if ($request->name) $user->name = $request->name;
+    if ($request->email) $user->email = $request->email;
+
+    // Update password jika diisi
+    if ($request->password) {
+        $user->password = Hash::make($request->password);
+    }
+
+    // Upload foto jika ada file baru
+    if ($request->hasFile('profile_photo')) {
+
+        // Hapus foto lama
+        if ($user->profile_photo && file_exists(public_path($user->profile_photo))) {
+            unlink(public_path($user->profile_photo));
+        }
+
+        // Upload baru
+        $path = $request->file('profile_photo')->store('profile_photos', 'public');
+        $user->profile_photo = '/storage/' . $path;
+    }
+
+    // Simpan perubahan
+    $user->save();
+
+    return response()->json([
+        'message' => 'Profil berhasil diperbarui',
+        'user' => $user
+    ]);
+}
+
+
 
 public function deleteProfile(Request $request)
 {

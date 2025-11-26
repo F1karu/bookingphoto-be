@@ -10,117 +10,142 @@ class PhotographerController extends Controller
     public function __construct()
     {
         $this->middleware('admin')->only(['store', 'update', 'destroy']);
-}
-
-   public function index()
-   {
-    $photographer = Photographer::all();
-    return response()->json($photographer);
-   }
-
-   public function show($id)
-   {
-    $photographer = Photographer::findOrFail($id);
-    return response()->json($photographer);
-   }
-
-   public function store(Request $request)
-{
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'phone' => 'required|string|max:20',
-        'email' => 'required|email|unique:photographers,email',
-        'bio' => 'required|string',
-        'city_id' => 'required|exists:cities,id',
-        'price_per_hour' => 'required|numeric',
-        'category' => 'required|in:wedding,portrait,event,newborn,product,family',
-        'photo_url' => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
-    ]);
-
-    // Simpan file
-    $path = $request->file('photo_url')->store('photographers', 'public');
-
-    $photographer = Photographer::create([
-        'name' => $request->name,
-        'phone' => $request->phone,
-        'email' => $request->email,
-        'bio' => $request->bio,
-        'city_id' => $request->city_id,
-        'price_per_hour' => $request->price_per_hour,
-        'status' => 'available',
-        'category' => $request->category,
-        'photo_url' => '/storage/' . $path,
-    ]);
-
-    return response()->json($photographer, 201);
-}
-
-
-
-   public function update(Request $request, $id)
-   {
-    $photographer = Photographer::findOrFail($id);
-
-    $request->validate([
-        'name' => 'sometimes|string|max:255',
-        'phone' => 'sometimes|string|max:20',
-            'email' => 'sometimes|email|unique:photographers,email,' . $id,
-            'bio' => 'nullable|string',
-            'photo_url' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'price_per_hour' => 'nullable|numeric',
-            'status' => 'nullable|in:available,busy,offline',
-            'city_id' => 'sometimes|exists:cities,id',
-            'category' => 'sometimes|in:wedding,portrait,event,newborn,product,family',
-
-        
-    ]);
-
-    if ($request->hasFile('photo_url')) {
-    $path = $request->file('photo_url')->store('photographers', 'public');
-    $request->merge(['photo_url' => '/storage/' . $path]);
-}
-
-
-    $photographer->update($request->all());
-
-    return response()->json($photographer);
-   }
-
-   public function destroy($id)
-   {
-    $photographer = Photographer::findOrFail($id);
-    $photographer->delete();
-    return response()->json(['message' => 'Photographer telah dihapus']);
-   }
-
-
-public function updateStatus(Request $request, $id)
-{
-    $photographer = Photographer::findOrFail($id);
-
-    $request->validate([
-        'status' => 'required|in:available,busy,offline',
-    ]);
-
-    $photographer->status = $request->status;
-    $photographer->save();
-
-    return response()->json($photographer);
-}
-
-public function getByStatus($status)
-{
-    if (!in_array($status, ['available','busy','offline'])) {
-        return response()->json(['message' => 'Status tidak valid'], 422);
     }
 
-    $photographers = Photographer::where('status', $status)->get();
-    return response()->json($photographers);
-}
+    /*
+    |--------------------------------------------------------------------------
+    | GET SEMUA PHOTOGRAPHER
+    |--------------------------------------------------------------------------
+    */
+    public function index()
+    {
+        return response()->json(Photographer::all());
+    }
 
+    /*
+    |--------------------------------------------------------------------------
+    | GET DETAIL PHOTOGRAPHER
+    |--------------------------------------------------------------------------
+    */
+    public function show($id)
+    {
+        $photographer = Photographer::findOrFail($id);
+        return response()->json($photographer);
+    }
 
+    /*
+    |--------------------------------------------------------------------------
+    | STORE PHOTOGRAPHER
+    |--------------------------------------------------------------------------
+    */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name'       => 'required|string|max:255',
+            'phone'      => 'required|string|max:20',
+            'email'      => 'required|email|unique:photographers,email',
+            'bio'        => 'required|string',
+            'city_id'    => 'required|exists:cities,id',
+            'price_type' => 'required|in:normal,professional',
+            'category'   => 'required|in:wedding,portrait,event,newborn,product,family',
+            'photo_url'  => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
 
+        // upload
+        $path = $request->file('photo_url')->store('photographers', 'public');
 
+        $photographer = Photographer::create([
+            'name'       => $request->name,
+            'phone'      => $request->phone,
+            'email'      => $request->email,
+            'bio'        => $request->bio,
+            'city_id'    => $request->city_id,
+            'price_type' => $request->price_type,
+            'status'     => 'available',
+            'category'   => $request->category,
+            'photo_url'  => '/storage/' . $path,
+        ]);
 
+        return response()->json($photographer, 201);
+    }
 
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE PHOTOGRAPHER
+    |--------------------------------------------------------------------------
+    */
+    public function update(Request $request, $id)
+    {
+        $photographer = Photographer::findOrFail($id);
+
+        $request->validate([
+            'name'       => 'sometimes|string|max:255',
+            'phone'      => 'sometimes|string|max:20',
+            'email'      => 'sometimes|email|unique:photographers,email,' . $id,
+            'bio'        => 'nullable|string',
+            'photo_url'  => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'price_type' => 'sometimes|in:normal,professional',
+            'status'     => 'sometimes|in:available,busy,offline',
+            'city_id'    => 'sometimes|exists:cities,id',
+            'category'   => 'sometimes|in:wedding,portrait,event,newborn,product,family',
+        ]);
+
+        // new photo
+        if ($request->hasFile('photo_url')) {
+            $path = $request->file('photo_url')->store('photographers', 'public');
+            $request->merge(['photo_url' => '/storage/' . $path]);
+        }
+
+        $photographer->update($request->all());
+
+        return response()->json($photographer);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | DELETE (Soft Delete)
+    |--------------------------------------------------------------------------
+    */
+    public function destroy($id)
+    {
+        $photographer = Photographer::findOrFail($id);
+        $photographer->delete();
+
+        return response()->json(['message' => 'Photographer telah dihapus']);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE STATUS
+    |--------------------------------------------------------------------------
+    */
+    public function updateStatus(Request $request, $id)
+    {
+        $photographer = Photographer::findOrFail($id);
+
+        $request->validate([
+            'status' => 'required|in:available,busy,offline',
+        ]);
+
+        $photographer->status = $request->status;
+        $photographer->save();
+
+        return response()->json($photographer);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER PHOTOGRAPHER BERDASARKAN STATUS
+    |--------------------------------------------------------------------------
+    */
+    public function getByStatus($status)
+    {
+        if (!in_array($status, ['available', 'busy', 'offline'])) {
+            return response()->json(['message' => 'Status tidak valid'], 422);
+        }
+
+        return response()->json(
+            Photographer::where('status', $status)->get()
+        );
+    }
 }
